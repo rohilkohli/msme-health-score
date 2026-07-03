@@ -1,0 +1,33 @@
+{
+  "rmse": 0.023612920064791265,
+  "mae": 0.01872419995940166,
+  "r2": 0.9656211982243098,
+  "cv_r2_mean": -16.15372758836753,
+  "cv_r2_std": 30.92345410860256,
+  "n_features": 22,
+  "n_samples": 50,
+  "feature_columns": [
+    "annual_turnover",
+    "avg_credit_amount",
+    "avg_daily_balance",
+    "avg_debit_amount",
+    "avg_epfo_contribution",
+    "avg_monthly_credits",
+    "avg_monthly_debits",
+    "avg_monthly_revenue",
+    "avg_tax_paid",
+    "balance_trend",
+    "credit_debit_ratio",
+    "emi_to_income_ratio",
+    "employee_count",
+    "epfo_compliance_rate",
+    "gst_compliance_rate",
+    "num_gst_filings",
+    "revenue_growth",
+    "revenue_volatility",
+    "transaction_frequency",
+    "unique_counterparties",
+    "workforce_growth",
+    "years_in_business"
+  ]
+}
