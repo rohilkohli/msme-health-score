@@ -126,12 +126,16 @@ export default function Landing() {
                 Get Your Score
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link
-                to="/login"
-                className="flex items-center gap-2 bg-white text-primary-800 px-8 py-4 rounded-xl font-semibold text-lg border-2 border-primary-200 hover:border-primary-800 transition-all"
+              <button
+                onClick={() => {
+                  localStorage.setItem('auth_token', 'demo_token_123')
+                  localStorage.setItem('user', JSON.stringify({ id: 1, name: 'Demo User', email: 'demo@idbihealthscore.in' }))
+                  window.location.href = '/dashboard'
+                }}
+                className="flex items-center gap-2 bg-white text-primary-800 px-8 py-4 rounded-xl font-semibold text-lg border-2 border-primary-200 hover:border-primary-800 transition-all cursor-pointer"
               >
                 View Demo
-              </Link>
+              </button>
             </motion.div>
           </div>
 

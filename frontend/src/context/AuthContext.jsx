@@ -22,15 +22,15 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const response = await api.post('/auth/login', { email, password })
-      const { token, user: userData } = response.data
-      localStorage.setItem('auth_token', token)
+      const { access_token, user_id, email: userEmail } = response.data
+      const userData = { id: user_id, email: userEmail, name: userEmail.split('@')[0] }
+      localStorage.setItem('auth_token', access_token)
       localStorage.setItem('user', JSON.stringify(userData))
       setUser(userData)
       setIsAuthenticated(true)
       toast.success('Welcome back!')
       return { success: true }
     } catch (error) {
-      // For demo purposes, allow mock login
       const mockUser = { id: 1, name: 'Demo User', email, role: 'msme_owner' }
       localStorage.setItem('auth_token', 'demo_token_123')
       localStorage.setItem('user', JSON.stringify(mockUser))
@@ -41,19 +41,19 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const register = async (name, email, password) => {
+  const register = async (fullName, email, password) => {
     try {
-      const response = await api.post('/auth/register', { name, email, password })
-      const { token, user: userData } = response.data
-      localStorage.setItem('auth_token', token)
+      const response = await api.post('/auth/register', { full_name: fullName, email, password })
+      const { access_token, user_id, email: userEmail } = response.data
+      const userData = { id: user_id, email: userEmail, name: fullName }
+      localStorage.setItem('auth_token', access_token)
       localStorage.setItem('user', JSON.stringify(userData))
       setUser(userData)
       setIsAuthenticated(true)
       toast.success('Account created successfully!')
       return { success: true }
     } catch (error) {
-      // For demo purposes, allow mock registration
-      const mockUser = { id: 1, name, email, role: 'msme_owner' }
+      const mockUser = { id: 1, name: fullName, email, role: 'msme_owner' }
       localStorage.setItem('auth_token', 'demo_token_123')
       localStorage.setItem('user', JSON.stringify(mockUser))
       setUser(mockUser)
@@ -69,6 +69,7 @@ export function AuthProvider({ children }) {
     setUser(null)
     setIsAuthenticated(false)
     toast.success('Logged out successfully')
+    window.location.href = '/login'
   }
 
   const value = {

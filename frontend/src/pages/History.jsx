@@ -120,7 +120,7 @@ export default function History() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700"
+          className="liquid-glass-sm p-5"
         >
           <p className="text-sm text-slate-500 dark:text-slate-400">Current Score</p>
           <p className="text-3xl font-bold text-primary-800 mt-1">742</p>
@@ -134,7 +134,7 @@ export default function History() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700"
+          className="liquid-glass-sm p-5"
         >
           <p className="text-sm text-slate-500 dark:text-slate-400">Highest Score</p>
           <p className="text-3xl font-bold text-emerald-600 mt-1">742</p>
@@ -148,7 +148,7 @@ export default function History() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700"
+          className="liquid-glass-sm p-5"
         >
           <p className="text-sm text-slate-500 dark:text-slate-400">Avg Monthly Change</p>
           <p className="text-3xl font-bold text-accent-600 mt-1">+8.9</p>
@@ -164,7 +164,7 @@ export default function History() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700"
+        className="liquid-glass p-6"
       >
         <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Score Trend</h3>
         <TrendChart data={history} height={300} />
@@ -175,7 +175,7 @@ export default function History() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700"
+        className="liquid-glass p-6"
       >
         <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-6">Assessment Timeline</h3>
 

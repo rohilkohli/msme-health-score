@@ -118,7 +118,7 @@ export default function DataConnect() {
       </div>
 
       {/* Progress */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <div className="liquid-glass p-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Link2 className="w-5 h-5 text-primary-800" />
@@ -168,7 +168,7 @@ export default function DataConnect() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-shadow"
+              className="liquid-glass-sm p-6"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -236,11 +236,12 @@ export default function DataConnect() {
 
       {/* Consent Modal */}
       {showConsent && consentSource && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowConsent(false)}>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            className="liquid-glass p-6 max-w-md w-full shadow-2xl"
           >
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">

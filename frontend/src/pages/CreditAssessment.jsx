@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import LoanApplicationModal from '../components/LoanApplicationModal'
 import {
   CreditCard,
   TrendingUp,
@@ -15,6 +17,7 @@ import { useHealthScore } from '../hooks/useHealthScore'
 
 export default function CreditAssessment() {
   const { creditAssessment, loading } = useHealthScore()
+  const [applyingProduct, setApplyingProduct] = useState(null)
 
   if (loading || !creditAssessment) {
     return (
@@ -48,7 +51,7 @@ export default function CreditAssessment() {
       </div>
 
       {/* Credit Readiness Meter */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700">
+      <div className="liquid-glass p-8">
         <div className="text-center mb-8">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
             Credit Readiness Score
@@ -108,7 +111,7 @@ export default function CreditAssessment() {
       </div>
 
       {/* Industry Benchmark Comparison */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <div className="liquid-glass p-6">
         <div className="flex items-center gap-2 mb-6">
           <BarChart3 className="w-5 h-5 text-primary-800" />
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Industry Benchmark</h3>
@@ -150,7 +153,7 @@ export default function CreditAssessment() {
       </div>
 
       {/* Eligible Products */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <div className="liquid-glass p-6">
         <div className="flex items-center gap-2 mb-6">
           <Star className="w-5 h-5 text-accent-500" />
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Eligible Loan Products</h3>
@@ -195,7 +198,10 @@ export default function CreditAssessment() {
                 </div>
               </div>
 
-              <button className="w-full mt-4 flex items-center justify-center gap-2 bg-primary-50 text-primary-800 py-2 rounded-lg text-sm font-medium hover:bg-primary-100 transition-colors">
+              <button
+                onClick={() => setApplyingProduct(product)}
+                className="w-full mt-4 flex items-center justify-center gap-2 bg-primary-50 text-primary-800 py-2 rounded-lg text-sm font-medium hover:bg-primary-100 transition-colors"
+              >
                 Apply Now
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
@@ -205,7 +211,7 @@ export default function CreditAssessment() {
       </div>
 
       {/* Improvement Areas */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <div className="liquid-glass p-6">
         <div className="flex items-center gap-2 mb-6">
           <Target className="w-5 h-5 text-primary-800" />
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white">How to Improve Your Score</h3>
@@ -244,6 +250,13 @@ export default function CreditAssessment() {
           ))}
         </div>
       </div>
+      {/* Loan Application Modal */}
+      {applyingProduct && (
+        <LoanApplicationModal
+          product={applyingProduct}
+          onClose={() => setApplyingProduct(null)}
+        />
+      )}
     </motion.div>
   )
 }

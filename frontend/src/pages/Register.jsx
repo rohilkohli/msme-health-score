@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Activity, Mail, Lock, Eye, EyeOff, User, ArrowRight, Phone } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useAuth } from '../hooks/useAuth'
 
 export default function Register() {
@@ -25,6 +26,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match')
       return
     }
     setLoading(true)

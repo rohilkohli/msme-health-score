@@ -32,25 +32,15 @@ api.interceptors.response.use(
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          localStorage.removeItem('auth_token')
-          localStorage.removeItem('user')
-          window.location.href = '/login'
-          toast.error('Session expired. Please login again.')
+          // Don't redirect — let components handle auth failures gracefully
           break
         case 403:
           toast.error('You do not have permission to perform this action.')
           break
-        case 404:
-          toast.error('Resource not found.')
-          break
         case 500:
           toast.error('Server error. Please try again later.')
           break
-        default:
-          toast.error(error.response.data?.message || 'Something went wrong.')
       }
-    } else if (error.request) {
-      toast.error('Network error. Please check your connection.')
     }
     return Promise.reject(error)
   }

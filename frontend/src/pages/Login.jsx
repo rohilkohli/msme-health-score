@@ -151,7 +151,14 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
+          {/* Demo credentials hint */}
+          <div className="mt-6 p-3 bg-accent-50 border border-accent-200 rounded-lg">
+            <p className="text-xs text-accent-700 font-medium text-center">
+              Demo: <span className="font-mono">demo@idbihealthscore.in</span> / <span className="font-mono">demo123</span>
+            </p>
+          </div>
+
+          <p className="mt-4 text-center text-sm text-slate-500">
             Don't have an account?{' '}
             <Link to="/register" className="text-primary-800 font-semibold hover:underline">
               Create one

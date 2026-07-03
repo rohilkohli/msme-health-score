@@ -1,46 +1,41 @@
 import { useState, useEffect } from 'react'
 import api from '../api/axios'
 
-// Mock data for demonstration when backend is not available
 const mockHealthScore = {
   composite_score: 742,
   category: 'Good',
+  risk_level: 'Moderate',
   dimensions: {
-    revenue_stability: { score: 78, trend: 'up', label: 'Revenue Stability' },
-    expense_management: { score: 65, trend: 'stable', label: 'Expense Management' },
-    tax_compliance: { score: 92, trend: 'up', label: 'Tax Compliance' },
-    workforce_stability: { score: 71, trend: 'down', label: 'Workforce Stability' },
-    banking_behavior: { score: 85, trend: 'up', label: 'Banking Behavior' },
+    revenue_stability: { score: 78, trend: 'up', label: 'Revenue Stability', weight: 0.25, weighted_score: 19.5, sub_metrics: {}, insights: [] },
+    cash_flow_health: { score: 72, trend: 'up', label: 'Cash Flow Health', weight: 0.25, weighted_score: 18.0, sub_metrics: {}, insights: [] },
+    compliance_score: { score: 88, trend: 'up', label: 'Compliance Score', weight: 0.20, weighted_score: 17.6, sub_metrics: {}, insights: [] },
+    growth_trajectory: { score: 65, trend: 'stable', label: 'Growth Trajectory', weight: 0.15, weighted_score: 9.75, sub_metrics: {}, insights: [] },
+    repayment_capacity: { score: 80, trend: 'up', label: 'Repayment Capacity', weight: 0.15, weighted_score: 12.0, sub_metrics: {}, insights: [] },
   },
   strengths: [
-    'Consistent GST filing with zero delays',
-    'Healthy bank balance maintained above threshold',
-    'Diverse revenue streams across 4+ clients',
-    'Regular UPI transaction patterns indicate steady business',
+    'Consistent GST filing with zero delays in last 12 months',
+    'Healthy bank balance maintained above 2x monthly obligations',
+    'Diverse revenue streams across 4+ client segments',
+    'Regular UPI transaction patterns indicate steady business activity',
   ],
   weaknesses: [
-    'High expense-to-revenue ratio in Q4',
-    'Employee attrition rate above industry average',
-    'Credit utilization approaching 75% limit',
+    'Cash flow shows pressure in Q4 due to seasonal dip',
+    'Growth trajectory below industry average of 15% CAGR',
+    'High customer concentration — top client is 35% of revenue',
   ],
   recommendations: [
-    { text: 'Reduce operational expenses by 15% to improve margins', priority: 'high' },
-    { text: 'Diversify client base to reduce revenue concentration risk', priority: 'medium' },
-    { text: 'Implement employee retention programs', priority: 'medium' },
-    { text: 'Consider refinancing high-interest debt', priority: 'low' },
+    { text: 'Diversify client base to reduce revenue concentration below 25%', priority: 'high' },
+    { text: 'Build cash reserves for 3 months of operating expenses', priority: 'high' },
+    { text: 'Explore new market segments to accelerate growth trajectory', priority: 'medium' },
+    { text: 'Consider seasonal credit line for Q4 cash flow management', priority: 'low' },
   ],
-  last_updated: '2026-07-02T14:30:00Z',
-  data_sources: {
-    gst: { status: 'connected', last_sync: '2026-07-02T10:00:00Z' },
-    bank: { status: 'connected', last_sync: '2026-07-02T08:00:00Z' },
-    upi: { status: 'connected', last_sync: '2026-07-01T22:00:00Z' },
-    epfo: { status: 'pending', last_sync: null },
-  },
+  ml_prediction_score: 76.4,
+  computed_at: '2026-07-02T14:30:00Z',
 }
 
 const mockHistory = [
-  { date: '2026-01', score: 680, category: 'Fair' },
-  { date: '2026-02', score: 695, category: 'Fair' },
+  { date: '2026-01', score: 680, category: 'Good' },
+  { date: '2026-02', score: 695, category: 'Good' },
   { date: '2026-03', score: 710, category: 'Good' },
   { date: '2026-04', score: 705, category: 'Good' },
   { date: '2026-05', score: 728, category: 'Good' },
@@ -48,40 +43,46 @@ const mockHistory = [
   { date: '2026-07', score: 742, category: 'Good' },
 ]
 
-const mockCreditAssessment = {
-  credit_readiness: 78,
-  eligible_products: [
-    { name: 'Working Capital Loan', limit: '25,00,000', interest: '10.5%', provider: 'IDBI Bank' },
-    { name: 'Business Term Loan', limit: '50,00,000', interest: '11.2%', provider: 'IDBI Bank' },
-    { name: 'Invoice Discounting', limit: '15,00,000', interest: '9.8%', provider: 'OCEN Partner' },
-    { name: 'Equipment Finance', limit: '30,00,000', interest: '10.0%', provider: 'IDBI Bank' },
-  ],
-  industry_benchmark: {
-    average_score: 650,
-    top_quartile: 780,
-    your_percentile: 72,
-  },
-  improvement_areas: [
-    { area: 'Reduce debt-to-equity ratio', impact: '+45 points', effort: 'Medium' },
-    { area: 'Maintain 6 months cash reserves', impact: '+30 points', effort: 'High' },
-    { area: 'File GST returns on time for 6 months', impact: '+20 points', effort: 'Low' },
-  ],
-}
-
 export function useHealthScore() {
   const [healthScore, setHealthScore] = useState(null)
   const [history, setHistory] = useState([])
-  const [creditAssessment, setCreditAssessment] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
   const fetchHealthScore = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/health-score')
-      setHealthScore(response.data)
-    } catch (err) {
-      // Use mock data when backend is not available
+      const msmeRes = await api.get('/msme/list')
+      if (msmeRes.data && msmeRes.data.length > 0) {
+        const msmeId = msmeRes.data[0].id
+        const response = await api.get(`/health-score/${msmeId}`)
+        const data = response.data
+        // Normalize dimension labels
+        const dims = {}
+        for (const [key, val] of Object.entries(data.dimensions || {})) {
+          const labels = {
+            revenue_stability: 'Revenue Stability',
+            cash_flow_health: 'Cash Flow Health',
+            compliance_score: 'Compliance Score',
+            growth_trajectory: 'Growth Trajectory',
+            repayment_capacity: 'Repayment Capacity',
+          }
+          dims[key] = { ...val, label: labels[key] || key, trend: 'up' }
+        }
+        // Derive strengths/weaknesses from dimension scores
+        const strengths = []
+        const weaknesses = []
+        for (const [key, val] of Object.entries(dims)) {
+          if (val.score >= 75) strengths.push(`Strong ${val.label.toLowerCase()} performance (${Math.round(val.score)}/100)`)
+          else if (val.score < 50) weaknesses.push(`${val.label} needs attention (${Math.round(val.score)}/100)`)
+        }
+        if (strengths.length === 0) strengths.push('Business operational with active data sources')
+        if (weaknesses.length === 0) weaknesses.push('No major concerns identified')
+
+        setHealthScore({ ...data, dimensions: dims, strengths, weaknesses, computed_at: data.computed_at })
+      } else {
+        setHealthScore(mockHealthScore)
+      }
+    } catch {
       setHealthScore(mockHealthScore)
     } finally {
       setLoading(false)
@@ -90,34 +91,54 @@ export function useHealthScore() {
 
   const fetchHistory = async () => {
     try {
-      const response = await api.get('/health-score/history')
-      setHistory(response.data)
-    } catch (err) {
+      const msmeRes = await api.get('/msme/list')
+      if (msmeRes.data && msmeRes.data.length > 0) {
+        const res = await api.get(`/health-score/${msmeRes.data[0].id}/history`)
+        if (res.data.scores && res.data.scores.length > 0) {
+          setHistory(res.data.scores.map(s => ({
+            date: s.computed_at ? new Date(s.computed_at).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }) : '',
+            score: s.composite_score,
+            category: s.category,
+          })))
+          return
+        }
+      }
+      setHistory(mockHistory)
+    } catch {
       setHistory(mockHistory)
     }
   }
 
-  const fetchCreditAssessment = async () => {
-    try {
-      const response = await api.get('/credit-assessment')
-      setCreditAssessment(response.data)
-    } catch (err) {
-      setCreditAssessment(mockCreditAssessment)
-    }
+  const mockCreditAssessment = {
+    credit_readiness: 78,
+    eligible_products: [
+      { name: 'Working Capital Loan', limit: '₹25,00,000', interest: '10.5%', provider: 'IDBI Bank' },
+      { name: 'Business Term Loan', limit: '₹50,00,000', interest: '11.2%', provider: 'IDBI Bank' },
+      { name: 'Invoice Discounting', limit: '₹15,00,000', interest: '9.8%', provider: 'OCEN Partner' },
+      { name: 'Equipment Finance', limit: '₹30,00,000', interest: '10.0%', provider: 'IDBI Bank' },
+    ],
+    industry_benchmark: {
+      average_score: 650,
+      top_quartile: 780,
+      your_percentile: 72,
+    },
+    improvement_areas: [
+      { area: 'Reduce debt-to-equity ratio', impact: '+45 points', effort: 'Medium' },
+      { area: 'Maintain 6 months cash reserves', impact: '+30 points', effort: 'High' },
+      { area: 'File GST returns on time for 6 months', impact: '+20 points', effort: 'Low' },
+    ],
   }
 
   useEffect(() => {
     fetchHealthScore()
     fetchHistory()
-    fetchCreditAssessment()
   }, [])
 
   return {
     healthScore,
     history,
-    creditAssessment,
+    creditAssessment: mockCreditAssessment,
     loading,
-    error,
     refetch: fetchHealthScore,
   }
 }

@@ -1,65 +1,69 @@
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
-export default function DimensionCard({ label, score, trend, index = 0 }) {
-  const getTrendIcon = () => {
-    switch (trend) {
-      case 'up':
-        return <TrendingUp className="w-4 h-4 text-emerald-500" />
-      case 'down':
-        return <TrendingDown className="w-4 h-4 text-red-500" />
-      default:
-        return <Minus className="w-4 h-4 text-slate-400" />
-    }
-  }
+export default function DimensionCard({ label, score, trend = 'stable', index = 0 }) {
+  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus
+  const trendColor = trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-red-500' : 'text-slate-400'
+  const trendLabel = trend === 'up' ? 'Improving' : trend === 'down' ? 'Declining' : 'Stable'
 
-  const getTrendLabel = () => {
-    switch (trend) {
-      case 'up': return 'Improving'
-      case 'down': return 'Declining'
-      default: return 'Stable'
-    }
+  const getGradient = () => {
+    if (score >= 80) return 'from-emerald-400 to-emerald-600'
+    if (score >= 60) return 'from-blue-400 to-blue-600'
+    if (score >= 40) return 'from-amber-400 to-amber-600'
+    return 'from-red-400 to-red-600'
   }
 
   const getScoreColor = () => {
-    if (score >= 80) return 'bg-emerald-500'
-    if (score >= 60) return 'bg-blue-500'
-    if (score >= 40) return 'bg-amber-500'
-    return 'bg-red-500'
-  }
-
-  const getScoreBarBg = () => {
-    if (score >= 80) return 'bg-emerald-100'
-    if (score >= 60) return 'bg-blue-100'
-    if (score >= 40) return 'bg-amber-100'
-    return 'bg-red-100'
+    if (score >= 80) return '#10b981'
+    if (score >= 60) return '#3b82f6'
+    if (score >= 40) return '#f59e0b'
+    return '#ef4444'
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.4 }}
-      className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="liquid-glass-sm p-4 flex items-center gap-4 group"
     >
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{label}</h4>
-        <div className="flex items-center gap-1">
-          {getTrendIcon()}
-          <span className="text-xs text-slate-500">{getTrendLabel()}</span>
+      {/* Score ring */}
+      <div className="relative w-14 h-14 flex-shrink-0">
+        <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(226,232,240,0.4)" strokeWidth="4" />
+          <motion.circle
+            cx="28" cy="28" r="22" fill="none"
+            stroke={getScoreColor()}
+            strokeWidth="4.5"
+            strokeLinecap="round"
+            strokeDasharray={138}
+            initial={{ strokeDashoffset: 138 }}
+            animate={{ strokeDashoffset: 138 - (138 * score / 100) }}
+            transition={{ duration: 1.2, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-sm font-black text-slate-700 dark:text-white">{Math.round(score)}</span>
         </div>
       </div>
-      <div className="flex items-end justify-between mb-2">
-        <span className="text-2xl font-bold text-slate-800 dark:text-white">{score}</span>
-        <span className="text-xs text-slate-400">/ 100</span>
-      </div>
-      <div className={`w-full h-2 rounded-full ${getScoreBarBg()}`}>
-        <motion.div
-          className={`h-full rounded-full ${getScoreColor()}`}
-          initial={{ width: 0 }}
-          animate={{ width: `${score}%` }}
-          transition={{ delay: index * 0.1 + 0.3, duration: 0.8, ease: 'easeOut' }}
-        />
+
+      {/* Label and bar */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{label}</p>
+          <div className={`flex items-center gap-1 ${trendColor}`}>
+            <TrendIcon className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">{trendLabel}</span>
+          </div>
+        </div>
+        <div className="h-2.5 bg-slate-100/80 dark:bg-slate-700/50 rounded-full overflow-hidden">
+          <motion.div
+            className={`h-full rounded-full bg-gradient-to-r ${getGradient()} shadow-sm`}
+            initial={{ width: 0 }}
+            animate={{ width: `${score}%` }}
+            transition={{ duration: 1.2, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+          />
+        </div>
       </div>
     </motion.div>
   )
