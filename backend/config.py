@@ -18,11 +18,12 @@ class Settings(BaseSettings):
     AA_API_BASE_URL: str = "https://sandbox.accountaggregator.in/api/v1"
 
     SCORING_WEIGHTS: dict = {
-        "revenue_stability": 0.25,
-        "cash_flow_health": 0.25,
-        "compliance_score": 0.20,
-        "growth_trajectory": 0.15,
-        "repayment_capacity": 0.15,
+        "cashflow_strength_stability": 0.25,
+        "repayment_capacity_leverage": 0.20,
+        "business_activity_growth": 0.15,
+        "transaction_quality_conduct": 0.15,
+        "compliance_formalization": 0.15,
+        "resilience_risk_buffers": 0.10,
     }
 
     ML_MODEL_PATH: str = "ml/model_artifacts/health_score_model.joblib"

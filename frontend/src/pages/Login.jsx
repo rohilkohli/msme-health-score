@@ -46,7 +46,7 @@ export default function Login() {
           </h2>
           <p className="mt-4 text-primary-200 text-lg leading-relaxed">
             Get a comprehensive view of your business's financial health across
-            5 key dimensions. Make data-driven decisions and access better credit.
+            6 key dimensions. Make data-driven decisions and access better credit.
           </p>
           <div className="mt-8 space-y-3">
             {['AI-powered multidimensional scoring', 'Built on India Stack (AA/ULI/OCEN)', 'Bank-grade security & privacy'].map((item, i) => (

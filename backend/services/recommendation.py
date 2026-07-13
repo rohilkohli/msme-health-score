@@ -6,26 +6,38 @@ class RecommendationEngine:
 
     def generate_recommendations(
         self,
-        revenue_score: float,
-        cash_flow_score: float,
+        cashflow_strength_score: float,
+        repayment_capacity_score: float,
+        business_activity_score: float,
+        transaction_quality_score: float,
         compliance_score: float,
-        growth_score: float,
-        repayment_score: float,
+        resilience_score: float,
         risk_flags: List[Dict[str, str]],
     ) -> List[str]:
         recommendations = []
 
-        if revenue_score < 50:
-            recommendations.append("Diversify revenue streams to reduce dependency on single clients or products")
-            recommendations.append("Consider filing GST returns on time consistently to improve compliance record")
-        elif revenue_score < 70:
-            recommendations.append("Focus on stabilizing monthly revenue — reduce seasonal variance through advance orders or retainer contracts")
-
-        if cash_flow_score < 50:
+        if cashflow_strength_score < 50:
             recommendations.append("Implement tighter payment collection policies — consider offering early payment discounts to customers")
             recommendations.append("Reduce unnecessary outflows and build a cash reserve buffer of 2-3 months operating expenses")
-        elif cash_flow_score < 70:
+        elif cashflow_strength_score < 70:
             recommendations.append("Monitor working capital cycle — aim to reduce receivables days and optimize payables")
+
+        if repayment_capacity_score < 50:
+            recommendations.append("Reduce existing debt burden before taking new credit — consider debt consolidation")
+            recommendations.append("Improve free cash flow by negotiating better vendor terms and reducing discretionary spending")
+        elif repayment_capacity_score < 70:
+            recommendations.append("Maintain current EMI discipline and avoid taking additional short-term debt")
+
+        if business_activity_score < 50:
+            recommendations.append("Invest in customer acquisition and market expansion to restart growth trajectory")
+            recommendations.append("Improve filing regularity and invoice discipline to strengthen business activity signals")
+        elif business_activity_score < 70:
+            recommendations.append("Growth is moderate — explore adjacent markets or product line extensions for acceleration")
+
+        if transaction_quality_score < 50:
+            recommendations.append("Reduce buyer concentration and monitor transaction anomalies to improve conduct score")
+        elif transaction_quality_score < 70:
+            recommendations.append("Strengthen transaction controls by reviewing reversals and recurring anomalies monthly")
 
         if compliance_score < 50:
             recommendations.append("Prioritize statutory compliance — set up auto-reminders for GST and EPFO due dates")
@@ -33,17 +45,10 @@ class RecommendationEngine:
         elif compliance_score < 70:
             recommendations.append("Minor compliance gaps detected — ensure all GST returns and EPFO challan are filed before due dates")
 
-        if growth_score < 50:
-            recommendations.append("Invest in customer acquisition and market expansion to restart growth trajectory")
-            recommendations.append("Consider digital marketing and e-commerce channels to reach new customer segments")
-        elif growth_score < 70:
-            recommendations.append("Growth is moderate — explore adjacent markets or product line extensions for acceleration")
-
-        if repayment_score < 50:
-            recommendations.append("Reduce existing debt burden before taking new credit — consider debt consolidation")
-            recommendations.append("Improve free cash flow by negotiating better vendor terms and reducing discretionary spending")
-        elif repayment_score < 70:
-            recommendations.append("Maintain current EMI discipline and avoid taking additional short-term debt")
+        if resilience_score < 50:
+            recommendations.append("Build liquidity buffers and reduce earnings volatility to improve resilience during stress periods")
+        elif resilience_score < 70:
+            recommendations.append("Track liquidity buffer days monthly and target at least 30 days of operating coverage")
 
         high_risks = [r for r in risk_flags if r.get("severity") == "high"]
         if high_risks:

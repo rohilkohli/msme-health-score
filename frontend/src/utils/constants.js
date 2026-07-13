@@ -1,17 +1,18 @@
 export const SCORE_CATEGORIES = {
-  EXCELLENT: { min: 800, max: 1000, label: 'Excellent', color: '#10b981', bgColor: '#d1fae5' },
-  GOOD: { min: 600, max: 799, label: 'Good', color: '#3b82f6', bgColor: '#dbeafe' },
-  FAIR: { min: 400, max: 599, label: 'Fair', color: '#f59e0b', bgColor: '#fef3c7' },
-  POOR: { min: 200, max: 399, label: 'Needs Improvement', color: '#f97316', bgColor: '#fed7aa' },
-  CRITICAL: { min: 0, max: 199, label: 'Critical', color: '#ef4444', bgColor: '#fee2e2' },
+  VERY_STRONG: { min: 800, max: 1000, label: 'Very Strong', color: '#10b981', bgColor: '#d1fae5' },
+  STRONG: { min: 700, max: 799, label: 'Strong', color: '#3b82f6', bgColor: '#dbeafe' },
+  MODERATE: { min: 600, max: 699, label: 'Moderate', color: '#f59e0b', bgColor: '#fef3c7' },
+  WEAK: { min: 500, max: 599, label: 'Weak', color: '#f97316', bgColor: '#fed7aa' },
+  HIGH_RISK: { min: 0, max: 499, label: 'High Risk', color: '#ef4444', bgColor: '#fee2e2' },
 }
 
 export const DIMENSIONS = [
-  { key: 'revenue_stability', label: 'Revenue Stability', icon: 'TrendingUp', description: 'GST filing consistency, revenue growth trend, seasonal variance' },
-  { key: 'cash_flow_health', label: 'Cash Flow Health', icon: 'Wallet', description: 'Inflow/outflow ratio, transaction regularity, working capital' },
-  { key: 'compliance_score', label: 'Compliance Score', icon: 'FileCheck', description: 'GST + EPFO filing timeliness and statutory compliance' },
-  { key: 'growth_trajectory', label: 'Growth Trajectory', icon: 'TrendingUp', description: 'Revenue CAGR, customer base growth, workforce expansion' },
-  { key: 'repayment_capacity', label: 'Repayment Capacity', icon: 'Building', description: 'DSCR, free cash flow, obligation coverage ratio' },
+  { key: 'cashflow_strength_stability', label: 'Cashflow Strength & Stability', icon: 'Wallet', description: 'AA bank flows, GST sales trend, UPI inflow consistency' },
+  { key: 'repayment_capacity_leverage', label: 'Repayment Capacity & Leverage', icon: 'Building', description: 'Debt servicing ability, obligation coverage, leverage proxy' },
+  { key: 'business_activity_growth', label: 'Business Activity & Growth', icon: 'TrendingUp', description: 'GST filing regularity, invoice momentum, growth trend' },
+  { key: 'transaction_quality_conduct', label: 'Transaction Quality & Conduct', icon: 'FileCheck', description: 'Anomaly control, concentration risk, transaction discipline' },
+  { key: 'compliance_formalization', label: 'Compliance & Formalization', icon: 'FileCheck', description: 'GST/EPFO timeliness, continuity, business vintage' },
+  { key: 'resilience_risk_buffers', label: 'Resilience & Risk Buffers', icon: 'ShieldCheck', description: 'Liquidity buffer, volatility stress, adverse event control' },
 ]
 
 export const DATA_SOURCES = [
@@ -37,11 +38,11 @@ export const NAV_ITEMS = [
 ]
 
 export function getScoreCategory(score) {
-  if (score >= 800) return SCORE_CATEGORIES.EXCELLENT
-  if (score >= 600) return SCORE_CATEGORIES.GOOD
-  if (score >= 400) return SCORE_CATEGORIES.FAIR
-  if (score >= 200) return SCORE_CATEGORIES.POOR
-  return SCORE_CATEGORIES.CRITICAL
+  if (score >= 800) return SCORE_CATEGORIES.VERY_STRONG
+  if (score >= 700) return SCORE_CATEGORIES.STRONG
+  if (score >= 600) return SCORE_CATEGORIES.MODERATE
+  if (score >= 500) return SCORE_CATEGORIES.WEAK
+  return SCORE_CATEGORIES.HIGH_RISK
 }
 
 export function getScoreColor(score) {

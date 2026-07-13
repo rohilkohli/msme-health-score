@@ -92,6 +92,9 @@ class DimensionScore(BaseModel):
     weighted_score: float
     sub_metrics: Dict[str, float]
     insights: List[str]
+    trend_3m: str = "stable"
+    trend_6m: str = "stable"
+    trend_12m: str = "stable"
 
 
 class HealthScoreResponse(BaseModel):
@@ -105,6 +108,12 @@ class HealthScoreResponse(BaseModel):
     feature_importance: Optional[Dict[str, float]]
     computed_at: datetime
     recommendations: List[str]
+    top_strengths: List[str] = []
+    top_risks: List[str] = []
+    reason_codes: List[Dict[str, Any]] = []
+    data_confidence_index: Dict[str, float] = {}
+    score_improvement_guidance: List[str] = []
+    insufficient_data_flags: List[str] = []
 
 
 class HealthScoreHistory(BaseModel):

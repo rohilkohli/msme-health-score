@@ -3,22 +3,22 @@ import api from '../api/axios'
 
 const mockHealthScore = {
   composite_score: 742,
-  category: 'Good',
+  category: 'Strong',
   risk_level: 'Moderate',
   dimensions: {
-    revenue_stability: { score: 78, trend: 'up', label: 'Revenue Stability', weight: 0.25, weighted_score: 19.5, sub_metrics: {}, insights: [] },
-    cash_flow_health: { score: 72, trend: 'up', label: 'Cash Flow Health', weight: 0.25, weighted_score: 18.0, sub_metrics: {}, insights: [] },
-    compliance_score: { score: 88, trend: 'up', label: 'Compliance Score', weight: 0.20, weighted_score: 17.6, sub_metrics: {}, insights: [] },
-    growth_trajectory: { score: 65, trend: 'stable', label: 'Growth Trajectory', weight: 0.15, weighted_score: 9.75, sub_metrics: {}, insights: [] },
-    repayment_capacity: { score: 80, trend: 'up', label: 'Repayment Capacity', weight: 0.15, weighted_score: 12.0, sub_metrics: {}, insights: [] },
+    cashflow_strength_stability: { score: 78, trend: 'up', label: 'Cashflow Strength & Stability', weight: 0.25, weighted_score: 19.5, sub_metrics: {}, insights: [] },
+    repayment_capacity_leverage: { score: 72, trend: 'up', label: 'Repayment Capacity & Leverage', weight: 0.20, weighted_score: 14.4, sub_metrics: {}, insights: [] },
+    business_activity_growth: { score: 74, trend: 'up', label: 'Business Activity & Growth', weight: 0.15, weighted_score: 11.1, sub_metrics: {}, insights: [] },
+    transaction_quality_conduct: { score: 68, trend: 'stable', label: 'Transaction Quality & Conduct', weight: 0.15, weighted_score: 10.2, sub_metrics: {}, insights: [] },
+    compliance_formalization: { score: 82, trend: 'up', label: 'Compliance & Formalization', weight: 0.15, weighted_score: 12.3, sub_metrics: {}, insights: [] },
+    resilience_risk_buffers: { score: 70, trend: 'stable', label: 'Resilience & Risk Buffers', weight: 0.10, weighted_score: 7.0, sub_metrics: {}, insights: [] },
   },
-  strengths: [
+  top_strengths: [
     'Consistent GST filing with zero delays in last 12 months',
     'Healthy bank balance maintained above 2x monthly obligations',
     'Diverse revenue streams across 4+ client segments',
-    'Regular UPI transaction patterns indicate steady business activity',
   ],
-  weaknesses: [
+  top_risks: [
     'Cash flow shows pressure in Q4 due to seasonal dip',
     'Growth trajectory below industry average of 15% CAGR',
     'High customer concentration — top client is 35% of revenue',
@@ -60,18 +60,20 @@ export function useHealthScore() {
         const dims = {}
         for (const [key, val] of Object.entries(data.dimensions || {})) {
           const labels = {
-            revenue_stability: 'Revenue Stability',
-            cash_flow_health: 'Cash Flow Health',
-            compliance_score: 'Compliance Score',
-            growth_trajectory: 'Growth Trajectory',
-            repayment_capacity: 'Repayment Capacity',
+            cashflow_strength_stability: 'Cashflow Strength & Stability',
+            repayment_capacity_leverage: 'Repayment Capacity & Leverage',
+            business_activity_growth: 'Business Activity & Growth',
+            transaction_quality_conduct: 'Transaction Quality & Conduct',
+            compliance_formalization: 'Compliance & Formalization',
+            resilience_risk_buffers: 'Resilience & Risk Buffers',
           }
-          dims[key] = { ...val, label: labels[key] || key, trend: 'up' }
+          const trend = val.trend_3m || val.trend_6m || val.trend_12m || 'stable'
+          dims[key] = { ...val, label: labels[key] || val.label || key, trend }
         }
         // Derive strengths/weaknesses from dimension scores
-        const strengths = []
-        const weaknesses = []
-        for (const [key, val] of Object.entries(dims)) {
+        const strengths = [...(data.top_strengths || [])]
+        const weaknesses = [...(data.top_risks || [])]
+        for (const [, val] of Object.entries(dims)) {
           if (val.score >= 75) strengths.push(`Strong ${val.label.toLowerCase()} performance (${Math.round(val.score)}/100)`)
           else if (val.score < 50) weaknesses.push(`${val.label} needs attention (${Math.round(val.score)}/100)`)
         }

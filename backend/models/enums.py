@@ -2,50 +2,50 @@ from enum import Enum
 
 
 class ScoreCategory(str, Enum):
-    EXCELLENT = "Excellent"
-    GOOD = "Good"
-    FAIR = "Fair"
-    NEEDS_IMPROVEMENT = "Needs Improvement"
-    CRITICAL = "Critical"
+    VERY_STRONG = "Very Strong"
+    STRONG = "Strong"
+    MODERATE = "Moderate"
+    WEAK = "Weak"
+    HIGH_RISK = "High Risk"
 
     @classmethod
     def from_score(cls, score: float) -> "ScoreCategory":
         if score >= 800:
-            return cls.EXCELLENT
+            return cls.VERY_STRONG
+        elif score >= 700:
+            return cls.STRONG
         elif score >= 600:
-            return cls.GOOD
-        elif score >= 400:
-            return cls.FAIR
-        elif score >= 200:
-            return cls.NEEDS_IMPROVEMENT
+            return cls.MODERATE
+        elif score >= 500:
+            return cls.WEAK
         else:
-            return cls.CRITICAL
+            return cls.HIGH_RISK
 
 
 class ScoreCategoryColor(str, Enum):
-    EXCELLENT = "Green"
-    GOOD = "Blue"
-    FAIR = "Yellow"
-    NEEDS_IMPROVEMENT = "Orange"
-    CRITICAL = "Red"
+    VERY_STRONG = "Green"
+    STRONG = "Blue"
+    MODERATE = "Yellow"
+    WEAK = "Orange"
+    HIGH_RISK = "Red"
 
     @classmethod
     def from_category(cls, category: ScoreCategory) -> str:
         mapping = {
-            ScoreCategory.EXCELLENT: cls.EXCELLENT.value,
-            ScoreCategory.GOOD: cls.GOOD.value,
-            ScoreCategory.FAIR: cls.FAIR.value,
-            ScoreCategory.NEEDS_IMPROVEMENT: cls.NEEDS_IMPROVEMENT.value,
-            ScoreCategory.CRITICAL: cls.CRITICAL.value,
+            ScoreCategory.VERY_STRONG: cls.VERY_STRONG.value,
+            ScoreCategory.STRONG: cls.STRONG.value,
+            ScoreCategory.MODERATE: cls.MODERATE.value,
+            ScoreCategory.WEAK: cls.WEAK.value,
+            ScoreCategory.HIGH_RISK: cls.HIGH_RISK.value,
         }
         return mapping.get(category, "Gray")
 
 
 class RiskLevel(str, Enum):
+    VERY_LOW = "Very Low"
     LOW = "Low"
     MODERATE = "Moderate"
     HIGH = "High"
-    VERY_HIGH = "Very High"
 
 
 class DataSourceType(str, Enum):

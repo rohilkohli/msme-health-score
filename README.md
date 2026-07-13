@@ -14,7 +14,7 @@ Bank's MSME credit evaluation relies on traditional financial documents, which m
 
 An AI/ML-driven **MSME Financial Health Card** that:
 - Aggregates alternate data from GST, UPI, Account Aggregator, and EPFO
-- Computes a **multidimensional financial health score** (0-1000) across 5 key dimensions
+- Computes a **multidimensional financial health score** (0-1000) across 6 key dimensions
 - Visualizes strengths and risks through an intuitive Health Card interface
 - Integrates with ULI/OCEN/AA ecosystems for seamless data flow
 - Enables near real-time credit assessment
@@ -24,21 +24,22 @@ An AI/ML-driven **MSME Financial Health Card** that:
 
 | Dimension | Data Source | Weight |
 |-----------|------------|--------|
-| Revenue Stability | GST Filings | 25% |
-| Cash Flow Health | UPI + Bank Statements (AA) | 25% |
-| Compliance Score | EPFO + GST Filing Timeliness | 20% |
-| Growth Trajectory | Derived from all sources | 15% |
-| Repayment Capacity | Derived financial ratios | 15% |
+| Cashflow Strength & Stability | UPI + AA + GST | 25% |
+| Repayment Capacity & Leverage Proxy | AA Bank Statements | 20% |
+| Business Activity & Growth Momentum | GST + UPI + EPFO | 15% |
+| Transaction Quality & Conduct | UPI + GST + Risk Signals | 15% |
+| Compliance & Formalization | GST + EPFO + Business Vintage | 15% |
+| Resilience & Risk Buffers | AA + Cross-source Risk Signals | 10% |
 
 ## Score Categories
 
 | Score Range | Category | Risk Level |
 |-------------|----------|------------|
-| 800-1000 | Excellent | Very Low |
-| 600-799 | Good | Low |
-| 400-599 | Fair | Moderate |
-| 200-399 | Needs Improvement | High |
-| 0-199 | Critical | Very High |
+| 800-1000 | Very Strong | Very Low |
+| 700-799 | Strong | Low |
+| 600-699 | Moderate | Moderate |
+| 500-599 | Weak | High |
+| 0-499 | High Risk | High |
 
 ## Tech Stack
 
@@ -76,7 +77,7 @@ An AI/ML-driven **MSME Financial Health Card** that:
 │              Data Source Adapters                         │
 │  GST API │ UPI Analytics │ EPFO │ Account Aggregator     │
 ├──────────────────────────────────────────────────────────┤
-│     Scoring Engine (5-Dimension Weighted Model)          │
+│     Scoring Engine (6-Dimension Weighted Model)          │
 ├──────────────────────────────────────────────────────────┤
 │          ML Layer (Random Forest + XGBoost)               │
 ├──────────────────────────────────────────────────────────┤
