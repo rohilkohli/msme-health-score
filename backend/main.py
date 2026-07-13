@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import get_settings
 from models.database import init_db
-from routers import auth, msme, data_sources, health_score, credit_assessment, dashboard
+from routers import auth, msme, data_sources, health_score, credit_assessment, dashboard, ingestion
 
 settings = get_settings()
 
@@ -27,6 +27,7 @@ app.include_router(data_sources.router, prefix="/api/data-sources", tags=["Data 
 app.include_router(health_score.router, prefix="/api/health-score", tags=["Health Score"])
 app.include_router(credit_assessment.router, prefix="/api/credit-assessment", tags=["Credit Assessment"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(ingestion.router, prefix="/api/ingestion", tags=["Ingestion"])
 
 
 @app.on_event("startup")

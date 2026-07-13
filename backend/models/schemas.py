@@ -77,13 +77,70 @@ class DataSourceConnect(BaseModel):
     msme_id: int
     source_type: str = Field(..., description="GST, UPI, EPFO, or Account Aggregator")
     consent_duration_months: int = Field(default=12, ge=1, le=24)
+    consent_artifact_id: Optional[str] = None
 
 
 class DataSourceStatus(BaseModel):
     source_type: str
     status: str
+    consent_id: Optional[str] = None
+    consent_artifact_id: Optional[str] = None
+    consent_expires_at: Optional[datetime] = None
     connected_at: Optional[datetime]
     last_fetched_at: Optional[datetime]
+    last_sync_at: Optional[datetime] = None
+
+
+class IngestionRunRequest(BaseModel):
+    msme_id: int
+    source: str = Field(..., description="GST, UPI, EPFO, or Account Aggregator")
+    window_start: Optional[datetime] = None
+    window_end: Optional[datetime] = None
+    trigger_type: str = Field(default="manual", description="manual, scheduled, or event")
+
+
+class IngestionRunResponse(BaseModel):
+    run_id: int
+    msme_id: int
+    source: str
+    status: str
+    window_start: Optional[datetime]
+    window_end: Optional[datetime]
+    records_received: int = 0
+    records_valid: int = 0
+    error_summary: Optional[str] = None
+    quality_metrics: Dict[str, float] = {}
+    created_at: datetime
+    finished_at: Optional[datetime] = None
+
+
+class FeatureSnapshotResponse(BaseModel):
+    msme_id: int
+    ingestion_run_id: int
+    snapshot_period: str
+    snapshot_granularity: str
+    metrics: Dict[str, float] = {}
+    window_3m: Dict[str, float] = {}
+    window_6m: Dict[str, float] = {}
+    window_12m: Dict[str, float] = {}
+    created_at: datetime
+
+
+class QualityIssueResponse(BaseModel):
+    id: int
+    ingestion_run_id: Optional[int]
+    msme_id: int
+    source: str
+    source_record_id: Optional[str]
+    issue_type: str
+    severity: str
+    field_name: Optional[str]
+    message: str
+    created_at: datetime
+    resolved: bool
+
+    class Config:
+        from_attributes = True
 
 
 class DimensionScore(BaseModel):
@@ -92,6 +149,9 @@ class DimensionScore(BaseModel):
     weighted_score: float
     sub_metrics: Dict[str, float]
     insights: List[str]
+    trend_3m: str = "stable"
+    trend_6m: str = "stable"
+    trend_12m: str = "stable"
 
 
 class HealthScoreResponse(BaseModel):
@@ -105,6 +165,12 @@ class HealthScoreResponse(BaseModel):
     feature_importance: Optional[Dict[str, float]]
     computed_at: datetime
     recommendations: List[str]
+    top_strengths: List[str] = []
+    top_risks: List[str] = []
+    reason_codes: List[Dict[str, Any]] = []
+    data_confidence_index: Dict[str, float] = {}
+    score_improvement_guidance: List[str] = []
+    insufficient_data_flags: List[str] = []
 
 
 class HealthScoreHistory(BaseModel):

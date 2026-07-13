@@ -29,7 +29,7 @@ const features = [
 const steps = [
   { number: '01', icon: UserPlus, title: 'Register', description: 'Create your account and register your MSME business details' },
   { number: '02', icon: Database, title: 'Connect Data', description: 'Link your financial data sources through secure AA consent' },
-  { number: '03', icon: BarChart3, title: 'Get Score', description: 'AI analyzes your data across 5 key financial dimensions' },
+  { number: '03', icon: BarChart3, title: 'Get Score', description: 'AI analyzes your data across 6 multidimensional financial dimensions' },
   { number: '04', icon: CreditCard, title: 'Access Credit', description: 'Use your health score to unlock pre-approved credit offers' },
 ]
 

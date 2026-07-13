@@ -134,11 +134,11 @@ class TestAAService:
 
 class TestScoreCategory:
     def test_categories(self):
-        assert ScoreCategory.from_score(850) == ScoreCategory.EXCELLENT
-        assert ScoreCategory.from_score(700) == ScoreCategory.GOOD
-        assert ScoreCategory.from_score(500) == ScoreCategory.FAIR
-        assert ScoreCategory.from_score(300) == ScoreCategory.NEEDS_IMPROVEMENT
-        assert ScoreCategory.from_score(100) == ScoreCategory.CRITICAL
+        assert ScoreCategory.from_score(850) == ScoreCategory.VERY_STRONG
+        assert ScoreCategory.from_score(720) == ScoreCategory.STRONG
+        assert ScoreCategory.from_score(620) == ScoreCategory.MODERATE
+        assert ScoreCategory.from_score(520) == ScoreCategory.WEAK
+        assert ScoreCategory.from_score(300) == ScoreCategory.HIGH_RISK
 
 
 if __name__ == "__main__":

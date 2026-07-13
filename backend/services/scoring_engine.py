@@ -1,12 +1,11 @@
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 from datetime import datetime
 import numpy as np
-import json
 
 from models.database import (
-    MSME, GSTFiling, UPITransaction, EPFOContribution, BankStatement, HealthScore
+    MSME, GSTFiling, UPITransaction, EPFOContribution, BankStatement
 )
-from models.enums import ScoreCategory, ScoreCategoryColor, RiskLevel
+from models.enums import ScoreCategory, ScoreCategoryColor
 from models.schemas import DimensionScore, HealthScoreResponse
 from services.gst_service import GSTService
 from services.upi_service import UPIService
@@ -21,10 +20,7 @@ settings = get_settings()
 
 
 class ScoringEngine:
-    """
-    Main scoring engine that combines all dimension scores into a composite
-    MSME Financial Health Score (0-1000).
-    """
+    """Main scoring engine for MSME Financial Health Score (0-1000)."""
 
     def __init__(self):
         self.gst_service = GSTService()
@@ -44,19 +40,8 @@ class ScoringEngine:
         epfo_contributions: List[EPFOContribution],
         bank_statements: List[BankStatement],
     ) -> HealthScoreResponse:
-        """
-        Compute the complete MSME Financial Health Score.
-
-        Steps:
-        1. Compute individual dimension scores
-        2. Calculate weighted composite score (0-1000)
-        3. Run ML prediction for credit risk
-        4. Determine risk level and category
-        5. Generate recommendations
-        """
-        revenue_score, revenue_metrics, revenue_insights = self.gst_service.compute_revenue_stability_score(gst_filings)
-
-        cash_flow_score, cash_flow_metrics, cash_flow_insights = self.upi_service.compute_cash_flow_score(upi_transactions)
+        gst_score, gst_metrics, gst_insights = self.gst_service.compute_revenue_stability_score(gst_filings)
+        upi_score, upi_metrics, upi_insights = self.upi_service.compute_cash_flow_score(upi_transactions)
 
         gst_on_time = sum(1 for f in gst_filings if f.is_on_time) / len(gst_filings) if gst_filings else 0.5
         compliance_score, compliance_metrics, compliance_insights = self.epfo_service.compute_compliance_score(
@@ -66,24 +51,72 @@ class ScoringEngine:
         growth_score, growth_metrics, growth_insights = self._compute_growth_trajectory(
             gst_filings, upi_transactions, epfo_contributions
         )
+        repayment_score, repayment_metrics, repayment_insights = self.aa_service.compute_repayment_capacity(bank_statements)
+        aa_metrics, aa_insights = self.aa_service.compute_bank_health_metrics(bank_statements)
 
-        repayment_score, repayment_metrics, repayment_insights = self.aa_service.compute_repayment_capacity(
-            bank_statements
+        risk_flags = self.risk_analyzer.detect_risk_patterns(
+            gst_filings, upi_transactions, epfo_contributions, bank_statements
         )
 
-        aa_metrics, aa_insights = self.aa_service.compute_bank_health_metrics(bank_statements)
-        cash_flow_score = (cash_flow_score * 0.6 + np.mean(list(aa_metrics.values())) * 0.4)
-        cash_flow_score = round(min(100, max(0, cash_flow_score)), 2)
+        dimension_definitions = self._build_dimension_definitions(
+            msme=msme,
+            gst_score=gst_score,
+            gst_metrics=gst_metrics,
+            gst_insights=gst_insights,
+            upi_score=upi_score,
+            upi_metrics=upi_metrics,
+            upi_insights=upi_insights,
+            compliance_score=compliance_score,
+            compliance_metrics=compliance_metrics,
+            compliance_insights=compliance_insights,
+            growth_score=growth_score,
+            growth_metrics=growth_metrics,
+            growth_insights=growth_insights,
+            repayment_score=repayment_score,
+            repayment_metrics=repayment_metrics,
+            repayment_insights=repayment_insights,
+            aa_metrics=aa_metrics,
+            aa_insights=aa_insights,
+            risk_flags=risk_flags,
+        )
 
-        composite_score = (
-            revenue_score * self.weights["revenue_stability"] +
-            cash_flow_score * self.weights["cash_flow_health"] +
-            compliance_score * self.weights["compliance_score"] +
-            growth_score * self.weights["growth_trajectory"] +
-            repayment_score * self.weights["repayment_capacity"]
-        ) * 10
+        availability = {
+            "cashflow_strength_stability": bool(upi_transactions or bank_statements),
+            "repayment_capacity_leverage": bool(bank_statements),
+            "business_activity_growth": bool(gst_filings or upi_transactions),
+            "transaction_quality_conduct": bool(upi_transactions or gst_filings),
+            "compliance_formalization": bool(gst_filings or epfo_contributions),
+            "resilience_risk_buffers": bool(bank_statements),
+        }
 
-        composite_score = round(min(1000, max(0, composite_score)), 2)
+        insufficient_data_flags = [f"Insufficient data for {k}" for k, ok in availability.items() if not ok]
+
+        active_weight_sum = sum(self.weights[k] for k, ok in availability.items() if ok)
+        effective_weights: Dict[str, float] = {}
+        for key, base_weight in self.weights.items():
+            if availability.get(key) and active_weight_sum > 0:
+                effective_weights[key] = base_weight / active_weight_sum
+            else:
+                effective_weights[key] = 0.0
+
+        base_composite = 0.0
+        for key, dim in dimension_definitions.items():
+            base_composite += dim["score"] * effective_weights.get(key, 0.0)
+
+        data_confidence_index = self._compute_data_confidence(
+            gst_filings, upi_transactions, epfo_contributions, bank_statements
+        )
+        confidence_penalty = (100 - data_confidence_index["overall"]) * 1.2
+
+        critical_dims = [
+            "cashflow_strength_stability",
+            "repayment_capacity_leverage",
+            "compliance_formalization",
+        ]
+        critical_missing_penalty = sum(25 for key in critical_dims if not availability.get(key))
+
+        composite_score = self._clip((base_composite * 10) - confidence_penalty - critical_missing_penalty, 0, 1000)
+        composite_score = round(composite_score, 2)
 
         category = ScoreCategory.from_score(composite_score)
         category_color = ScoreCategoryColor.from_category(category)
@@ -99,33 +132,41 @@ class ScoringEngine:
         except Exception:
             pass
 
-        all_insights = revenue_insights + cash_flow_insights + compliance_insights + growth_insights + repayment_insights
-        risk_flags = self.risk_analyzer.detect_risk_patterns(
-            gst_filings, upi_transactions, epfo_contributions, bank_statements
-        )
+        reason_codes = self._extract_reason_codes(dimension_definitions, risk_flags)
+        positive_reasons = sorted([r for r in reason_codes if r["impact"] > 0], key=lambda r: r["impact"], reverse=True)
+        negative_reasons = sorted([r for r in reason_codes if r["impact"] < 0], key=lambda r: r["impact"])
 
-        dimension_scores = {
-            revenue_score: ("revenue_stability", revenue_metrics, revenue_insights),
-            cash_flow_score: ("cash_flow_health", cash_flow_metrics, cash_flow_insights),
-            compliance_score: ("compliance_score", compliance_metrics, compliance_insights),
-            growth_score: ("growth_trajectory", growth_metrics, growth_insights),
-            repayment_score: ("repayment_capacity", repayment_metrics, repayment_insights),
-        }
+        top_strengths = [r["message"] for r in positive_reasons[:3]]
+        top_risks = [r["message"] for r in negative_reasons[:3]]
 
         recommendations = self.recommendation_engine.generate_recommendations(
-            revenue_score, cash_flow_score, compliance_score,
-            growth_score, repayment_score, risk_flags
+            dimension_definitions["cashflow_strength_stability"]["score"],
+            dimension_definitions["repayment_capacity_leverage"]["score"],
+            dimension_definitions["business_activity_growth"]["score"],
+            dimension_definitions["transaction_quality_conduct"]["score"],
+            dimension_definitions["compliance_formalization"]["score"],
+            dimension_definitions["resilience_risk_buffers"]["score"],
+            risk_flags,
         )
 
-        dimensions = {}
-        for score_val, (dim_name, metrics, insights) in dimension_scores.items():
-            weight = self.weights[dim_name]
-            dimensions[dim_name] = DimensionScore(
-                score=score_val,
-                weight=weight,
-                weighted_score=round(score_val * weight, 2),
-                sub_metrics=metrics,
-                insights=insights,
+        score_improvement_guidance = recommendations[:4]
+        if insufficient_data_flags:
+            score_improvement_guidance.append("Connect missing data sources (GST/UPI/AA/EPFO) to improve score confidence")
+
+        dimensions: Dict[str, DimensionScore] = {}
+        for key, definition in dimension_definitions.items():
+            trends = definition["trends"]
+            weight = effective_weights.get(key, 0.0)
+            score = round(definition["score"], 2)
+            dimensions[key] = DimensionScore(
+                score=score,
+                weight=round(weight, 4),
+                weighted_score=round(score * weight, 2),
+                sub_metrics=definition["sub_metrics"],
+                insights=definition["insights"],
+                trend_3m=trends["3m"],
+                trend_6m=trends["6m"],
+                trend_12m=trends["12m"],
             )
 
         return HealthScoreResponse(
@@ -139,7 +180,276 @@ class ScoringEngine:
             feature_importance=feature_importance,
             computed_at=datetime.utcnow(),
             recommendations=recommendations,
+            top_strengths=top_strengths,
+            top_risks=top_risks,
+            reason_codes=reason_codes,
+            data_confidence_index=data_confidence_index,
+            score_improvement_guidance=score_improvement_guidance,
+            insufficient_data_flags=insufficient_data_flags,
         )
+
+    def _build_dimension_definitions(self, **kwargs) -> Dict[str, Dict[str, Any]]:
+        gst_metrics = kwargs["gst_metrics"]
+        upi_metrics = kwargs["upi_metrics"]
+        compliance_metrics = kwargs["compliance_metrics"]
+        growth_metrics = kwargs["growth_metrics"]
+        repayment_metrics = kwargs["repayment_metrics"]
+        aa_metrics = kwargs["aa_metrics"]
+        risk_flags = kwargs["risk_flags"]
+        msme = kwargs["msme"]
+
+        high_risk_count = sum(1 for flag in risk_flags if flag.get("severity") == "high")
+        moderate_risk_count = sum(1 for flag in risk_flags if flag.get("severity") == "moderate")
+
+        cashflow_strength = (
+            kwargs["upi_score"] * 0.45 +
+            aa_metrics.get("inflow_stability", 50) * 0.25 +
+            aa_metrics.get("cash_buffer", 50) * 0.15 +
+            gst_metrics.get("revenue_growth", 50) * 0.15
+        )
+
+        repayment_capacity = (
+            kwargs["repayment_score"] * 0.70 +
+            aa_metrics.get("emi_burden", 50) * 0.20 +
+            repayment_metrics.get("obligation_coverage", 50) * 0.10
+        )
+
+        business_activity = (
+            kwargs["growth_score"] * 0.45 +
+            kwargs["gst_score"] * 0.35 +
+            upi_metrics.get("transaction_regularity", 50) * 0.20
+        )
+
+        transaction_quality = (
+            upi_metrics.get("payment_discipline", 50) * 0.35 +
+            upi_metrics.get("transaction_regularity", 50) * 0.25 +
+            (100 - min(100, moderate_risk_count * 12 + high_risk_count * 20)) * 0.40
+        )
+
+        vintage_years = max(0, datetime.now().year - (msme.year_established or datetime.now().year))
+        vintage_score = self._clip((vintage_years / 10) * 100, 0, 100)
+        compliance_formalization = (
+            kwargs["compliance_score"] * 0.60 +
+            gst_metrics.get("filing_consistency", 50) * 0.20 +
+            compliance_metrics.get("epf_timeliness", 50) * 0.10 +
+            vintage_score * 0.10
+        )
+
+        resilience = (
+            aa_metrics.get("cash_buffer", 50) * 0.40 +
+            aa_metrics.get("inflow_stability", 50) * 0.30 +
+            repayment_metrics.get("free_cash_flow", 50) * 0.15 +
+            (100 - min(100, high_risk_count * 20 + moderate_risk_count * 10)) * 0.15
+        )
+
+        definitions = {
+            "cashflow_strength_stability": {
+                "score": self._clip(cashflow_strength, 0, 100),
+                "sub_metrics": {
+                    "upi_cashflow_health": round(kwargs["upi_score"], 2),
+                    "bank_inflow_stability": round(aa_metrics.get("inflow_stability", 50), 2),
+                    "liquidity_buffer": round(aa_metrics.get("cash_buffer", 50), 2),
+                    "gst_sales_momentum": round(gst_metrics.get("revenue_growth", 50), 2),
+                },
+                "insights": list(dict.fromkeys(kwargs["upi_insights"][:2] + kwargs["aa_insights"][:2])),
+                "trends": {
+                    "3m": self._trend_label(kwargs["upi_metrics"].get("working_capital", 50) - 50),
+                    "6m": self._trend_label(kwargs["upi_score"] - 50),
+                    "12m": self._trend_label(kwargs["gst_metrics"].get("revenue_growth", 50) - 50),
+                },
+            },
+            "repayment_capacity_leverage": {
+                "score": self._clip(repayment_capacity, 0, 100),
+                "sub_metrics": {
+                    "dscr_proxy": round(repayment_metrics.get("dscr_indicator", 50), 2),
+                    "obligation_coverage": round(repayment_metrics.get("obligation_coverage", 50), 2),
+                    "free_cash_flow_consistency": round(repayment_metrics.get("free_cash_flow", 50), 2),
+                    "emi_burden_proxy": round(aa_metrics.get("emi_burden", 50), 2),
+                },
+                "insights": kwargs["repayment_insights"][:4],
+                "trends": {
+                    "3m": self._trend_label(repayment_metrics.get("balance_trend", 50) - 50),
+                    "6m": self._trend_label(repayment_metrics.get("dscr_indicator", 50) - 50),
+                    "12m": self._trend_label(kwargs["repayment_score"] - 50),
+                },
+            },
+            "business_activity_growth": {
+                "score": self._clip(business_activity, 0, 100),
+                "sub_metrics": {
+                    "gst_filing_regularity": round(gst_metrics.get("filing_consistency", 50), 2),
+                    "invoice_growth_proxy": round(growth_metrics.get("revenue_cagr", 50), 2),
+                    "transaction_volume_trend": round(growth_metrics.get("transaction_volume_trend", 50), 2),
+                    "customer_growth": round(growth_metrics.get("customer_base_growth", 50), 2),
+                },
+                "insights": list(dict.fromkeys(kwargs["gst_insights"][:2] + kwargs["growth_insights"][:2])),
+                "trends": {
+                    "3m": self._trend_label(growth_metrics.get("transaction_volume_trend", 50) - 50),
+                    "6m": self._trend_label(growth_metrics.get("customer_base_growth", 50) - 50),
+                    "12m": self._trend_label(growth_metrics.get("revenue_cagr", 50) - 50),
+                },
+            },
+            "transaction_quality_conduct": {
+                "score": self._clip(transaction_quality, 0, 100),
+                "sub_metrics": {
+                    "payment_discipline": round(upi_metrics.get("payment_discipline", 50), 2),
+                    "transaction_regularity": round(upi_metrics.get("transaction_regularity", 50), 2),
+                    "anomaly_risk_control": round(100 - min(100, high_risk_count * 20 + moderate_risk_count * 12), 2),
+                    "concentration_risk_control": round(100 - min(100, moderate_risk_count * 10), 2),
+                },
+                "insights": [f.get("description", "") for f in risk_flags[:2] if f.get("description")] or ["No major transaction quality alerts detected"],
+                "trends": {
+                    "3m": self._trend_label(upi_metrics.get("transaction_regularity", 50) - 50),
+                    "6m": self._trend_label(upi_metrics.get("payment_discipline", 50) - 50),
+                    "12m": self._trend_label(50 - (high_risk_count * 8 + moderate_risk_count * 4)),
+                },
+            },
+            "compliance_formalization": {
+                "score": self._clip(compliance_formalization, 0, 100),
+                "sub_metrics": {
+                    "gst_timeliness": round(compliance_metrics.get("gst_timeliness", 50), 2),
+                    "epfo_timeliness": round(compliance_metrics.get("epf_timeliness", 50), 2),
+                    "contribution_continuity": round(compliance_metrics.get("contribution_regularity", 50), 2),
+                    "business_vintage_consistency": round(vintage_score, 2),
+                },
+                "insights": kwargs["compliance_insights"][:4],
+                "trends": {
+                    "3m": self._trend_label(compliance_metrics.get("gst_timeliness", 50) - 50),
+                    "6m": self._trend_label(compliance_metrics.get("epf_timeliness", 50) - 50),
+                    "12m": self._trend_label(kwargs["compliance_score"] - 50),
+                },
+            },
+            "resilience_risk_buffers": {
+                "score": self._clip(resilience, 0, 100),
+                "sub_metrics": {
+                    "liquidity_buffer_days_proxy": round(aa_metrics.get("cash_buffer", 50), 2),
+                    "volatility_stress_control": round(aa_metrics.get("inflow_stability", 50), 2),
+                    "adverse_event_control": round(100 - min(100, high_risk_count * 20 + moderate_risk_count * 8), 2),
+                    "balance_trend_resilience": round(repayment_metrics.get("balance_trend", 50), 2),
+                },
+                "insights": kwargs["aa_insights"][:2] + [
+                    f"Detected {high_risk_count} high-severity and {moderate_risk_count} moderate-severity risk signals"
+                ],
+                "trends": {
+                    "3m": self._trend_label(repayment_metrics.get("balance_trend", 50) - 50),
+                    "6m": self._trend_label(aa_metrics.get("cash_buffer", 50) - 50),
+                    "12m": self._trend_label(aa_metrics.get("inflow_stability", 50) - 50),
+                },
+            },
+        }
+
+        return definitions
+
+    def _compute_data_confidence(
+        self,
+        gst_filings: List[GSTFiling],
+        upi_transactions: List[UPITransaction],
+        epfo_contributions: List[EPFOContribution],
+        bank_statements: List[BankStatement],
+    ) -> Dict[str, float]:
+        source_presence = {
+            "gst": 100 if gst_filings else 0,
+            "upi": 100 if upi_transactions else 0,
+            "epfo": 100 if epfo_contributions else 0,
+            "aa": 100 if bank_statements else 0,
+        }
+
+        coverage = round(sum(source_presence.values()) / max(len(source_presence), 1), 2)
+
+        recency_components = []
+        now = datetime.utcnow()
+        if gst_filings:
+            try:
+                latest_gst = max(datetime.strptime(f.filing_period + "-01", "%Y-%m-%d") for f in gst_filings)
+                recency_components.append(max(0, 100 - (now - latest_gst).days * 1.2))
+            except Exception:
+                recency_components.append(60)
+        if upi_transactions:
+            latest_upi = max(t.transaction_date for t in upi_transactions)
+            recency_components.append(max(0, 100 - (now - latest_upi).days * 1.5))
+        if epfo_contributions:
+            try:
+                latest_epfo = max(datetime.strptime(c.contribution_month + "-01", "%Y-%m-%d") for c in epfo_contributions)
+                recency_components.append(max(0, 100 - (now - latest_epfo).days * 1.2))
+            except Exception:
+                recency_components.append(60)
+        if bank_statements:
+            try:
+                latest_bank = max(datetime.strptime(s.month + "-01", "%Y-%m-%d") for s in bank_statements)
+                recency_components.append(max(0, 100 - (now - latest_bank).days * 1.2))
+            except Exception:
+                recency_components.append(60)
+
+        recency = round(float(np.mean(recency_components)) if recency_components else 35.0, 2)
+
+        reliability_parts = []
+        if gst_filings:
+            reliability_parts.append(sum(1 for f in gst_filings if f.is_on_time) / len(gst_filings) * 100)
+        if epfo_contributions:
+            reliability_parts.append(sum(1 for c in epfo_contributions if c.is_on_time) / len(epfo_contributions) * 100)
+        if upi_transactions:
+            reliability_parts.append(min(100, len(upi_transactions) / 2))
+        if bank_statements:
+            reliability_parts.append(min(100, len(bank_statements) * 8))
+
+        reliability = round(float(np.mean(reliability_parts)) if reliability_parts else 35.0, 2)
+        overall = round((coverage * 0.4) + (recency * 0.3) + (reliability * 0.3), 2)
+
+        return {
+            "coverage": coverage,
+            "recency": recency,
+            "reliability": reliability,
+            "overall": overall,
+            "gst": round(source_presence["gst"], 2),
+            "upi": round(source_presence["upi"], 2),
+            "aa": round(source_presence["aa"], 2),
+            "epfo": round(source_presence["epfo"], 2),
+        }
+
+    def _extract_reason_codes(
+        self,
+        dimension_definitions: Dict[str, Dict[str, Any]],
+        risk_flags: List[Dict[str, str]],
+    ) -> List[Dict[str, Any]]:
+        reason_codes: List[Dict[str, Any]] = []
+
+        for key, dim in dimension_definitions.items():
+            score = dim["score"]
+            if score >= 75:
+                reason_codes.append({
+                    "code": f"{key.upper()}_STRONG",
+                    "dimension": key,
+                    "impact": round((score - 70) * 1.4, 2),
+                    "message": f"Strong {key.replace('_', ' ')} with score {score:.1f}/100",
+                })
+            elif score < 55:
+                reason_codes.append({
+                    "code": f"{key.upper()}_WEAK",
+                    "dimension": key,
+                    "impact": round(-(55 - score) * 1.6, 2),
+                    "message": f"Weak {key.replace('_', ' ')} with score {score:.1f}/100",
+                })
+
+        for idx, flag in enumerate(risk_flags[:6]):
+            severity = flag.get("severity", "moderate")
+            penalty = -20 if severity == "high" else -10
+            reason_codes.append({
+                "code": f"RISK_FLAG_{idx+1}",
+                "dimension": flag.get("category", "cross_source"),
+                "impact": penalty,
+                "message": flag.get("description", "Risk flag detected"),
+            })
+
+        return reason_codes
+
+    def _trend_label(self, delta: float) -> str:
+        if delta > 8:
+            return "up"
+        if delta < -8:
+            return "down"
+        return "stable"
+
+    def _clip(self, value: float, low: float, high: float) -> float:
+        return max(low, min(high, value))
 
     def _compute_growth_trajectory(
         self,

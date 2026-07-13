@@ -13,13 +13,15 @@ class RiskAnalyzer:
     def determine_risk_level(self, composite_score: float) -> RiskLevel:
         """Determine risk level from composite score."""
         if composite_score >= 800:
+            return RiskLevel.VERY_LOW
+        elif composite_score >= 700:
             return RiskLevel.LOW
         elif composite_score >= 600:
             return RiskLevel.MODERATE
-        elif composite_score >= 400:
+        elif composite_score >= 500:
             return RiskLevel.HIGH
         else:
-            return RiskLevel.VERY_HIGH
+            return RiskLevel.HIGH
 
     def detect_risk_patterns(
         self,

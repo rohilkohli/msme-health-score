@@ -18,7 +18,7 @@ const steps = [
   {
     icon: BarChart3,
     title: 'Get Your Health Score',
-    description: 'Our AI analyzes 5 dimensions — Revenue, Cash Flow, Compliance, Growth, and Repayment Capacity — to generate your score (0-1000).',
+    description: 'Our AI analyzes 6 dimensions — Cashflow, Repayment, Activity, Transaction Quality, Compliance, and Resilience — to generate your score (0-1000).',
     color: 'from-emerald-400 to-emerald-600',
   },
   {
